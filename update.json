@@ -1,23 +1,24 @@
 {
   "schema": 1,
-  "versionCode": 17,
-  "versionName": "1.0",
-  "publishedAt": "2026-10-25",
-  "mandatory": false,
-  "minSupportedVersionCode": 0,
+  "versionCode": 26,
+  "versionName": "1.1",
+  "publishedAt": "2026-11-03",
+  "mandatory": true,
+  "minSupportedVersionCode": 26,
   "minSdk": 26,
-  "apkUrl": "https://github.com/GeorgyAliabyev/blindnews-releases/releases/download/v1.0/BlindNews.apk",
-  "apkSize": 9263739,
-  "apkSha256": "dd7828592743048eb6ae5cdb40d4b27ddcd511844ef2e79c423131a3ff95668f",
+  "apkUrl": "https:\/\/github.com\/GeorgyAliabyev\/blindnews-releases\/releases\/download\/v1.1\/BlindNews.apk",
+  "apkSize": 10954275,
+  "apkSha256": "a1b65f19fb1c3c748dec9a96e1ff717745046a62a3a785bf71db748c7308e75c",
   "changelog": [
-    "Единая лента: подкасты, влоги, публикации, аудио и объявления.",
-    "Поиск по материалам, фильтры и голосовой поиск.",
-    "Media3-плеер: сохранение позиции, скорость, выбор качества.",
-    "Офлайн-загрузки и автозагрузка с настройками сети.",
-    "Фоновая проверка новых материалов и уведомления.",
-    "Русский, английский, шведский, казахский и украинский языки.",
-    "TalkBack, клавиатурная навигация, крупный текст, светлая, тёмная и высококонтрастная темы."
+    "**Что нового в BlindNews 1.1**",
+    "Очередь и автовоспроизведение",
+    "Объявления и советы",
+    "Более стабильный фокус TalkBack",
+    "Улучшенная фоновая синхронизация",
+    "Уведомления о новых материалах",
+    "Встроенная проверка обновлений",
+    "Ченьч-лог теперь появляется в виде баннера на главной странице."
   ],
-  "changelogUrl": "https://github.com/GeorgyAliabyev/blindnews-releases/blob/main/CHANGELOG.md",
-  "releaseUrl": "https://github.com/GeorgyAliabyev/blindnews-releases/releases"
+  "changelogUrl": "https:\/\/github.com\/GeorgyAliabyev\/blindnews-releases\/blob\/main\/CHANGELOG.md",
+  "releaseUrl": "https:\/\/github.com\/GeorgyAliabyev\/blindnews-releases\/releases"
 }
