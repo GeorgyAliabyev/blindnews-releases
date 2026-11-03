@@ -361,50 +361,38 @@ public final class UpdateInstaller {
 package ru.blindnews.app.update;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AlertDialog;
 
-/** Троттлинг проверок и сам диалог. Тексты — в strings.xml, не в коде. */
+/** Проверка обновлений и сам диалог. Тексты — в strings.xml, не в коде. */
 public final class UpdatePrompt {
 
-    private static final String PREFS = "blindnews_update";
-    private static final String KEY_LAST_CHECK = "last_check_ms";
-    private static final String KEY_CHECKED_VERSION = "checked_version_code";
-    private static final long CHECK_INTERVAL_MS = 12L * 60 * 60 * 1000;  // раз в 12 часов
+    /** Диалог уже показан в этом запуске — второй раз не открываем. */
+    private static boolean shownThisLaunch;
 
     private UpdatePrompt() {
     }
 
+    /**
+     * Проверка выполняется при каждом запуске приложения, без троттлинга.
+     * Манифест весит пару килобайт, поэтому проверка на старте ничего не стоит.
+     */
     public static void maybeCheck(Activity activity) {
-        SharedPreferences p = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        long last = p.getLong(KEY_LAST_CHECK, 0L);
-        // После установки новой сборки проверяем сразу: отметка времени от
-        // прошлой версии иначе глушит первую проверку на 12 часов, и человек
-        // видит обновление только когда нажмёт проверку вручную.
-        boolean firstRunOnThisVersion =
-                p.getInt(KEY_CHECKED_VERSION, 0) != BuildConfig.VERSION_CODE;
-        if (!firstRunOnThisVersion
-                && System.currentTimeMillis() - last < CHECK_INTERVAL_MS) return;
-
         GitHubUpdater.checkAsync(BuildConfig.VERSION_CODE, "BlindNews-Android",
                 new GitHubUpdater.Callback() {
                     @Override
                     public void onResult(UpdateInfo info) {
-                        p.edit()
-                                .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                                .putInt(KEY_CHECKED_VERSION, BuildConfig.VERSION_CODE)
-                                .apply();
-                        if (info != null && !activity.isFinishing()
+                        if (info != null && !shownThisLaunch
+                                && !activity.isFinishing()
                                 && !activity.isDestroyed()) {
+                            shownThisLaunch = true;
                             show(activity, info);
                         }
                     }
 
                     @Override
                     public void onError(Exception e) {
-                        // Не двигаем отметку времени: сеть пропала — попробуем позже.
+                        // Сеть пропала — молчим, проверим при следующем запуске.
                     }
                 });
     }
