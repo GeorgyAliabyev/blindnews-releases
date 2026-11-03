@@ -371,6 +371,7 @@ public final class UpdatePrompt {
 
     private static final String PREFS = "blindnews_update";
     private static final String KEY_LAST_CHECK = "last_check_ms";
+    private static final String KEY_CHECKED_VERSION = "checked_version_code";
     private static final long CHECK_INTERVAL_MS = 12L * 60 * 60 * 1000;  // раз в 12 часов
 
     private UpdatePrompt() {
@@ -379,13 +380,22 @@ public final class UpdatePrompt {
     public static void maybeCheck(Activity activity) {
         SharedPreferences p = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         long last = p.getLong(KEY_LAST_CHECK, 0L);
-        if (System.currentTimeMillis() - last < CHECK_INTERVAL_MS) return;
+        // После установки новой сборки проверяем сразу: отметка времени от
+        // прошлой версии иначе глушит первую проверку на 12 часов, и человек
+        // видит обновление только когда нажмёт проверку вручную.
+        boolean firstRunOnThisVersion =
+                p.getInt(KEY_CHECKED_VERSION, 0) != BuildConfig.VERSION_CODE;
+        if (!firstRunOnThisVersion
+                && System.currentTimeMillis() - last < CHECK_INTERVAL_MS) return;
 
         GitHubUpdater.checkAsync(BuildConfig.VERSION_CODE, "BlindNews-Android",
                 new GitHubUpdater.Callback() {
                     @Override
                     public void onResult(UpdateInfo info) {
-                        p.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply();
+                        p.edit()
+                                .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                                .putInt(KEY_CHECKED_VERSION, BuildConfig.VERSION_CODE)
+                                .apply();
                         if (info != null && !activity.isFinishing()
                                 && !activity.isDestroyed()) {
                             show(activity, info);
@@ -401,28 +411,20 @@ public final class UpdatePrompt {
 
     public static void show(Activity activity, UpdateInfo info) {
         StringBuilder body = new StringBuilder();
-        if (!info.changelog.isEmpty()) {
-            for (String line : info.changelog) {
-                body.append("• ").append(line).append("\n");
-            }
-            body.append("\n");
+        for (String line : info.changelog) {
+            body.append("• ").append(line).append("\n");
         }
-        if (info.apkSize > 0) {
-            body.append("Размер загрузки: ")
-                    .append(String.format(java.util.Locale.ROOT, "%.1f МБ",
-                            info.apkSize / 1024.0 / 1024.0))
-                    .append("\n\n");
+        if (body.length() == 0) {
+            body.append("Вышла новая версия BlindNews.");
         }
-        body.append("Приложение скачает файл и передаст его системе. "
-                + "Данные и настройки сохранятся.");
 
         boolean forced = info.isMandatoryFor(BuildConfig.VERSION_CODE);
 
         new AlertDialog.Builder(activity)
-                .setTitle("Доступно обновление " + info.versionName)
+                .setTitle("Что нового в BlindNews " + info.versionName)
                 .setMessage(body.toString().trim())
                 .setCancelable(!forced)
-                .setPositiveButton("Скачать и установить",
+                .setPositiveButton("Скачать обновление",
                         (d, w) -> UpdateDownload.run(activity, info))
                 .setNegativeButton(forced ? null : "Позже", null)
                 .show();
@@ -449,7 +451,7 @@ static void run(Activity activity, UpdateInfo info) {
                     }));
             activity.runOnUiThread(() -> {
                 pd.dismiss();
-                UpdateInstaller.install(activity, apk);
+                confirmInstall(activity, apk);
             });
         } catch (Exception e) {
             activity.runOnUiThread(() -> {
@@ -460,6 +462,20 @@ static void run(Activity activity, UpdateInfo info) {
             });
         }
     }, "update-download").start();
+}
+
+/** Говорит человеку, что делать дальше, и только по нажатию открывает установку. */
+private static void confirmInstall(Activity activity, File apk) {
+    new AlertDialog.Builder(activity)
+            .setTitle("Обновление скачано")
+            .setMessage("Сейчас откроется установка. Нажмите «Установить», "
+                    + "потом «Обновить». BlindNews закроется и откроется уже "
+                    + "новой версией. Данные и настройки сохранятся.")
+            .setCancelable(true)
+            .setPositiveButton("Продолжить",
+                    (d, w) -> UpdateInstaller.install(activity, apk))
+            .setNegativeButton("Позже", null)
+            .show();
 }
 ```
 
